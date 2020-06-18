@@ -18,11 +18,6 @@ except:
     print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
     mixed_precision = False  # not installed
 
-wdir = 'weights' + os.sep  # weights dir
-os.makedirs(wdir, exist_ok=True)
-last = wdir + 'last.pt'
-best = wdir + 'best.pt'
-
 # Hyperparameters
 hyp = {'lr0': 0.01,  # initial learning rate (SGD=1E-2, Adam=1E-3)
        'momentum': 0.937,  # SGD momentum
@@ -67,7 +62,13 @@ def train(hyp):
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
     train_path = data_dict['train']
     test_path = data_dict['val']
+    project_name = data_dict['project_name']
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
+
+    # prepare checkpoints dir
+    os.makedirs(os.path.join(opt.checkpoints, project_name), exist_ok=True)
+    last = os.path.join(opt.checkpoints, project_name, 'last.pt')
+    best = os.path.join(opt.checkpoints, project_name, 'best.pt')
 
     # Create model
     model = Model(opt.cfg).to(device)
@@ -212,9 +213,7 @@ def train(hyp):
             dataset.indices = random.choices(range(dataset.n), weights=image_weights, k=dataset.n)  # rand weighted idx
 
         mloss = torch.zeros(4, device=device)  # mean losses
-        print(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
-        pbar = tqdm(enumerate(dataloader), total=nb)  # progress bar
-        for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
+        for i, (imgs, targets, paths, _) in enumerate(dataloader):  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
 
@@ -261,10 +260,13 @@ def train(hyp):
 
             # Print
             mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
+            giou_loss, obj_loss, cls_loss, total_loss = mloss
             mem = '%.3gG' % (torch.cuda.memory_cached() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
             s = ('%10s' * 2 + '%10.4g' * 6) % (
                 '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
-            pbar.set_description(s)
+            print('Epoch: {}/{}, Mem: {}, giou_loss: {:.3f}, obj_loss: {:.3f}, cls_loss: {:.3f}, '
+                  'total_loss: {:.3f}, targets:{}, img_size: {} '.format(
+                  epoch, epochs-1, mem, giou_loss, obj_loss, cls_loss, total_loss, targets.shape[0], imgs.shape[-1]))
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
@@ -273,33 +275,31 @@ def train(hyp):
         # mAP
         ema.update_attr(model)
         final_epoch = epoch + 1 == epochs
-        if final_epoch:  # Calculate mAP
-            results, maps, times = test.test(opt.data,
-                                             batch_size=batch_size,
-                                             imgsz=imgsz_test,
-                                             save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                             model=ema.ema,
-                                             single_cls=opt.single_cls,
-                                             dataloader=testloader,
-                                             fast=epoch < epochs / 2)
+        results, maps, times = test.test(opt.data,
+                                         batch_size=batch_size,
+                                         imgsz=imgsz_test,
+                                         save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
+                                         model=ema.ema,
+                                         single_cls=opt.single_cls,
+                                         dataloader=testloader,
+                                         fast=epoch < epochs / 2)
 
         # Update best mAP
         fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
         if fi > best_fitness:
             best_fitness = fi
 
-        # Save finalmodel
-        if final_epoch:
-            ckpt = {'epoch': epoch,
-                    'best_fitness': best_fitness,
-                    'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
-                    'optimizer': None if final_epoch else optimizer.state_dict()}
+        # Save model
+        ckpt = {'epoch': epoch,
+                'best_fitness': best_fitness,
+                'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
+                'optimizer': None if final_epoch else optimizer.state_dict()}
 
-            # Save last, best and delete
-            torch.save(ckpt, last)
-            if (best_fitness == fi) and not final_epoch:
-                torch.save(ckpt, best)
-            del ckpt
+        # Save last, best and delete
+        torch.save(ckpt, last)
+        if (best_fitness == fi) and not final_epoch:
+            torch.save(ckpt, best)
+        del ckpt
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
@@ -315,9 +315,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='*.cfg path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
+    parser.add_argument('--cfg', type=str, default='configs/model-struct/m-fatigue.yaml', help='*.cfg path')
+    parser.add_argument('--data', type=str, default='configs/project-struct/fatigue.yaml', help='*.data path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
+    parser.add_argument('--checkpoints', type=str, default='./checkpoints', help='checkpoints dir')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')

@@ -84,11 +84,11 @@ def test(data,
     seen = 0
     names = model.names if hasattr(model, 'names') else model.module.names
     coco91class = coco80_to_coco91_class()
-    s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
+    #s = ('%20s' + '%12s' * 6) % ('Class', 'Images', 'Targets', 'P', 'R', 'mAP@.5', 'mAP@.5:.95')
     p, r, f1, mp, mr, map50, map, t0, t1 = 0., 0., 0., 0., 0., 0., 0., 0., 0.
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
-    for batch_i, (img, targets, paths, shapes) in enumerate(tqdm(dataloader, desc=s)):
+    for batch_i, (img, targets, paths, shapes) in enumerate(dataloader):
         img = img.to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -176,12 +176,14 @@ def test(data,
             # Append statistics (correct, conf, pcls, tcls)
             stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls))
 
+        '''
         # Plot images
         if batch_i < 1:
             f = 'test_batch%g_gt.jpg' % batch_i  # filename
             plot_images(img, targets, paths, f, names)  # ground truth
             f = 'test_batch%g_pred.jpg' % batch_i
             plot_images(img, output_to_target(output, width, height), paths, f, names)  # predictions
+        '''
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
@@ -194,8 +196,10 @@ def test(data,
         nt = torch.zeros(1)
 
     # Print results
-    pf = '%20s' + '%12.3g' * 6  # print format
-    print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    #pf = '%20s' + '%12.3g' * 6  # print format
+    #print(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    print('***TEST*** Class: {}, Images: {}, Targets: {}, Prec: {:.4f}, Recall: {:.4f}, mAP@.5: {:.4f}, mAP@.5:.95: {:.4f}'.format(
+          'all', seen, nt.sum(), mp, mr, map50, map))
 
     # Print results per class
     if verbose and nc > 1 and len(stats):

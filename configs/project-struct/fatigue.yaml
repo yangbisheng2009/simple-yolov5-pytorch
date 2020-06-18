@@ -1,0 +1,10 @@
+project_name: fatigue
+
+train: /home/work/yangfg/experiment/yolo/zipyolov5/data/custom-trainval-data/images/train
+val: /home/work/yangfg/experiment/yolo/zipyolov5/data/custom-trainval-data/images/val
+
+# number of classes
+nc: 4
+
+# class names
+names: ['closed_mouth', 'open_mouth', 'closed_eye', 'open_eye']

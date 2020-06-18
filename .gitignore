@@ -22,6 +22,7 @@
 
 *.pyc
 *.log
+*.log.*
 *.DS_Store
 *.swp
 *.idea
