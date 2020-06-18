@@ -1,0 +1,8 @@
+train: /home/work/yangfg/corpus/mouse-hat-smoke/yolo/images/train/
+val: /home/work/yangfg/corpus/mouse-hat-smoke/yolo/images/val/
+
+# number of classes
+nc: 4
+
+# class names
+names: ['hat', 'person', 'mouse', 'smoke']
