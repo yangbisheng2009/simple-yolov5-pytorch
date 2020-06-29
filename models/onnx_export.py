@@ -1,7 +1,6 @@
 """Exports a pytorch *.pt model to *.onnx format
 
 Usage:
-    import torch
     $ export PYTHONPATH="$PWD" && python models/onnx_export.py --weights ./weights/yolov5s.pt --img 640 --batch 1
 """
 
@@ -10,6 +9,7 @@ import argparse
 import onnx
 
 from models.common import *
+from utils import google_utils
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='image size')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     opt = parser.parse_args()
+    opt.img_size *= 2 if len(opt.img_size) == 1 else 1
     print(opt)
 
     # Parameters
