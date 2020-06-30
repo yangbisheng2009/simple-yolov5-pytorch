@@ -20,10 +20,6 @@ except:
     print('Apex recommended for faster mixed precision training: https://github.com/NVIDIA/apex')
     mixed_precision = False  # not installed
 
-wdir = 'weights' + os.sep  # weights dir
-os.makedirs(wdir, exist_ok=True)
-last = wdir + 'last.pt'
-best = wdir + 'best.pt'
 results_file = 'results.txt'
 
 # Hyperparameters
@@ -62,23 +58,25 @@ if hyp['fl_gamma']:
 def train(hyp):
     epochs = opt.epochs  # 300
     batch_size = opt.batch_size  # 64
-    weights = opt.weights  # initial training weights
 
     # Configure
     init_seeds(1)
-    with open(opt.data) as f:
+    with open(opt.project) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)  # model dict
+    project_name = data_dict['project_name']
+    print(project_name)
+    checkpoint_dir = os.path.join(opt.checkpoints, project_name)
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    last = os.path.join(checkpoint_dir, 'last.pt')
+    best = os.path.join(checkpoint_dir, 'best.pt')
+
     train_path = data_dict['train']
     test_path = data_dict['val']
     nc = 1 if opt.single_cls else int(data_dict['nc'])  # number of classes
 
-    # Remove previous results
-    for f in glob.glob('*_batch*.jpg') + glob.glob(results_file):
-        os.remove(f)
-
     # Create model
-    model = Model(opt.cfg).to(device)
-    assert model.md['nc'] == nc, '%s nc=%g classes but %s nc=%g classes' % (opt.data, nc, opt.cfg, model.md['nc'])
+    model = Model(data_dict).to(device)
+    #assert model.md['nc'] == nc, '%s nc=%g classes but %s nc=%g classes' % (opt.data, nc, opt.cfg, model.md['nc'])
     model.names = data_dict['names']
 
     # Image sizes
@@ -107,7 +105,7 @@ def train(hyp):
     del pg0, pg1, pg2
 
     # Load Model
-    google_utils.attempt_download(weights)
+    #google_utils.attempt_download(weights)
     start_epoch, best_fitness = 0, 0.0
 
     # Mixed precision training https://github.com/NVIDIA/apex
@@ -133,7 +131,7 @@ def train(hyp):
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
-    assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Correct your labels or your model.' % (mlc, nc, opt.cfg)
+    #assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Correct your labels or your model.' % (mlc, nc, opt.cfg)
 
     # Testloader
     testloader = create_dataloader(test_path, imgsz_test, batch_size, gs, opt,
@@ -246,10 +244,10 @@ def train(hyp):
         ema.update_attr(model)
         final_epoch = epoch + 1 == epochs
         if not opt.notest or final_epoch:  # Calculate mAP
-            results, maps, times = test.test(opt.data,
+            results, maps, times = test.test(opt.project,
                                              batch_size=batch_size,
                                              imgsz=imgsz_test,
-                                             save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
+                                             #save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
                                              model=ema.ema,
                                              single_cls=opt.single_cls,
                                              dataloader=testloader)
@@ -306,8 +304,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='*.cfg path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='*.data path')
+    parser.add_argument('--project', '-p', type=str, default='configs/mhs_s.yaml', help='project')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', action='store_true', help='resume training from last.pt')
@@ -317,23 +314,18 @@ if __name__ == '__main__':
     parser.add_argument('--evolve', action='store_true', help='evolve hyperparameters')
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
-    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--checkpoints', type=str, default='./checkpoints', help='checkpoints')
     parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     opt = parser.parse_args()
-    opt.weights = last if opt.resume else opt.weights
-    opt.cfg = check_file(opt.cfg)  # check file
-    opt.data = check_file(opt.data)  # check file
+    opt.project = check_file(opt.project)  # check file
     print(opt)
     opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
     device = torch_utils.select_device(opt.device, apex=mixed_precision, batch_size=opt.batch_size)
     if device.type == 'cpu':
         mixed_precision = False
 
-    # Train
-    if not opt.evolve:
-        print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-        train(hyp)
+    train(hyp)
