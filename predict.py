@@ -1,10 +1,20 @@
 import argparse
+import random
 
 import torch.backends.cudnn as cudnn
 
 from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
+
+
+def get_all_colors(class_num, seed=1):
+    class_colors = {}
+    random.seed(seed)
+    for cls in range(class_num):
+        class_colors[cls] = [random.randint(0, 255) for _ in range(3)]
+
+    return class_colors
 
 
 def detect():
@@ -20,8 +30,9 @@ def detect():
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
-    google_utils.attempt_download(weights)
+    #google_utils.attempt_download(weights)
     model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
+    model.load_state_dict(torch.load(weights, map_location=device))
     # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
     # model.fuse()
     model.to(device).eval()
@@ -30,7 +41,8 @@ def detect():
 
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names
-    colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
+    #colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
+    colors = get_all_colors(len(names))
 
     # Run inference
     t0 = time.time()
@@ -76,7 +88,10 @@ def detect():
                 # Write results
                 for *xyxy, conf, cls in det:
                     label = '%s %.2f' % (names[int(cls)], conf)
-                    plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                    xmin, ymin, xmax, ymax = xyxy
+                    color = colors[int(cls)]
+                    cv2.rectangle(im0, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
+                    cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
             cv2.imwrite(os.path.join(opt.output_images, f), im0)
             print('%sDone. (%.3fs)' % (s, t2 - t1))

@@ -1,14 +1,14 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'mask-m'
+project_name: 'cars-m'
 
-train: /home/work/yangfg/corpus/mask/yolo/images/train
-val: /home/work/yangfg/corpus/mask/yolo/images/val
+train: /home/work/yangfg/corpus/traffic-cars-count/yolo/images/train
+val: /home/work/yangfg/corpus/traffic-cars-count/yolo/images/val
 
 # number of classes
-nc: 2
+nc: 1
 
 # class names
-names: ['face', 'face_mask']
+names: ['car']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple

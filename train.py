@@ -181,9 +181,7 @@ def train(hyp):
         # dataset.mosaic_border = [b - imgsz, -b]  # height, width borders
 
         mloss = torch.zeros(4, device=device)  # mean losses
-        print(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'GIoU', 'obj', 'cls', 'total', 'targets', 'img_size'))
-        pbar = tqdm(enumerate(dataloader), total=nb)  # progress bar
-        for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
+        for i, (imgs, targets, paths, _) in enumerate(dataloader):
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0 - 255 to 0.0 - 1.0
 
@@ -230,10 +228,13 @@ def train(hyp):
 
             # Print
             mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
+            giou_loss, obj_loss, cls_loss, total_loss = mloss
             mem = '%.3gG' % (torch.cuda.memory_cached() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-            s = ('%10s' * 2 + '%10.4g' * 6) % (
-                '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
-            pbar.set_description(s)
+
+            print('Epoch: {}/{}, Batch: {}/{}, Mem: {}, giou_loss: {:.3f}, obj_loss: {:.3f}, '
+                  'cls_loss: {:.3f}, total_loss: {:.3f}, targets:{}, img_size: {} '.format(
+                  epoch, epochs-1, i, nb-1, mem, giou_loss, obj_loss, cls_loss, total_loss, 
+                  targets.shape[0], imgs.shape[-1]))
 
             # end batch ------------------------------------------------------------------------------------------------
 
@@ -252,46 +253,26 @@ def train(hyp):
                                              single_cls=opt.single_cls,
                                              dataloader=testloader)
 
-        # Write
-        with open(results_file, 'a') as f:
-            f.write(s + '%10.4g' * 7 % results + '\n')  # P, R, mAP, F1, test_losses=(GIoU, obj, cls)
-        if len(opt.name) and opt.bucket:
-            os.system('gsutil cp results.txt gs://%s/results/results%s.txt' % (opt.bucket, opt.name))
-
         # Update best mAP
         fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
         if fi > best_fitness:
             best_fitness = fi
 
         # Save model
-        save = (not opt.nosave) or (final_epoch and not opt.evolve)
-        if save:
-            with open(results_file, 'r') as f:  # create checkpoint
-                ckpt = {'epoch': epoch,
-                        'best_fitness': best_fitness,
-                        'training_results': f.read(),
-                        'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
-                        'optimizer': None if final_epoch else optimizer.state_dict()}
+        ckpt = {'epoch': epoch,
+                'best_fitness': best_fitness,
+                #'training_results': f.read(),
+                'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
+                'optimizer': None if final_epoch else optimizer.state_dict()}
 
-            # Save last, best and delete
-            torch.save(ckpt, last)
-            if (best_fitness == fi) and not final_epoch:
-                torch.save(ckpt, best)
-            del ckpt
+        # Save last, best and delete
+        torch.save(ckpt, last)
+        if (best_fitness == fi) and not final_epoch:
+            torch.save(ckpt, best)
+        del ckpt
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training
-
-    n = opt.name
-    if len(n):
-        n = '_' + n if not n.isnumeric() else n
-        fresults, flast, fbest = 'results%s.txt' % n, wdir + 'last%s.pt' % n, wdir + 'best%s.pt' % n
-        for f1, f2 in zip([wdir + 'last.pt', wdir + 'best.pt', 'results.txt'], [flast, fbest, fresults]):
-            if os.path.exists(f1):
-                os.rename(f1, f2)  # rename
-                ispt = f2.endswith('.pt')  # is *.pt
-                strip_optimizer(f2) if ispt else None  # strip optimizer
-                os.system('gsutil cp %s gs://%s/weights' % (f2, opt.bucket)) if opt.bucket and ispt else None  # upload
 
     print('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
     dist.destroy_process_group() if device.type != 'cpu' and torch.cuda.device_count() > 1 else None
@@ -315,7 +296,6 @@ if __name__ == '__main__':
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--checkpoints', type=str, default='./checkpoints', help='checkpoints')
-    parser.add_argument('--name', default='', help='renames results.txt to results_name.txt if supplied')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--adam', action='store_true', help='use adam optimizer')
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
