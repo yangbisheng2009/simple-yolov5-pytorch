@@ -19,7 +19,7 @@ def get_all_colors(class_num, seed=1):
 
 def detect():
     source, weights, view_img, save_txt, imgsz = \
-        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+        opt.input_images, opt.checkpoint, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # Initialize
@@ -31,7 +31,8 @@ def detect():
 
     # Load model
     #google_utils.attempt_download(weights)
-    model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
+    #model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
+    model = torch.load(weights, map_location=device).float()  # load to FP32
     #model.load_state_dict(torch.load(weights, map_location=device))
     # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
     # model.fuse()
@@ -49,8 +50,8 @@ def detect():
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     #for path, img, im0s, vid_cap in dataset:
-    for f in os.listdir(opt.source):
-        path = os.path.join(opt.source, f)
+    for f in os.listdir(source):
+        path = os.path.join(source, f)
         im0s = cv2.imread(path)
         img = letterbox(im0s, new_shape=imgsz)[0]
         img = img[:, :, ::-1].transpose(2, 0, 1)
@@ -101,8 +102,8 @@ def detect():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='weights/yolov5s.pt', help='model.pt path')
-    parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--checkpoint', type=str, default='weights/yolov5s.pt', help='model.pt path')
+    parser.add_argument('--input-images', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output-images', type=str, default='./output-images', help='output images dir')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
