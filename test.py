@@ -15,7 +15,7 @@ def test(data,
          save_json=False,
          single_cls=False,
          augment=False,
-         verbose=False,
+         verbose=True,
          model=None,
          dataloader=None,
          merge=False):
@@ -186,39 +186,13 @@ def test(data,
     # Print results per class
     if verbose and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            print(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            print('***SUB-CLASS*** Class: {}, Images: {}, Targets: {}, Prec: {:.4f}, Recall: {:.4f}, AP@.5: [{:.4f}], '
+                  'AP@.5:.95: {:.4f}'.format(names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t0 + t1)) + (imgsz, imgsz, batch_size)  # tuple
     if not training:
         print('Speed: %.1f/%.1f/%.1f ms inference/NMS/total per %gx%g image at batch-size %g' % t)
-
-    # Save JSON
-    if save_json and map50 and len(jdict):
-        imgIds = [int(Path(x).stem.split('_')[-1]) for x in dataloader.dataset.img_files]
-        f = 'detections_val2017_%s_results.json' % \
-            (weights.split(os.sep)[-1].replace('.pt', '') if weights else '')  # filename
-        print('\nCOCO mAP with pycocotools... saving %s...' % f)
-        with open(f, 'w') as file:
-            json.dump(jdict, file)
-
-        try:
-            from pycocotools.coco import COCO
-            from pycocotools.cocoeval import COCOeval
-
-            # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
-            cocoGt = COCO(glob.glob('../coco/annotations/instances_val*.json')[0])  # initialize COCO ground truth api
-            cocoDt = cocoGt.loadRes(f)  # initialize COCO pred api
-
-            cocoEval = COCOeval(cocoGt, cocoDt, 'bbox')
-            cocoEval.params.imgIds = imgIds  # image IDs to evaluate
-            cocoEval.evaluate()
-            cocoEval.accumulate()
-            cocoEval.summarize()
-            map, map50 = cocoEval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
-        except:
-            print('WARNING: pycocotools must be installed with numpy==1.17 to run correctly. '
-                  'See https://github.com/cocodataset/cocoapi/issues/356')
 
     # Return results
     model.float()  # for training

@@ -31,8 +31,8 @@ def detect():
 
     # Load model
     #google_utils.attempt_download(weights)
-    #model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
-    model = torch.load(weights, map_location=device).float()  # load to FP32
+    model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
+    #model = torch.load(weights, map_location=device).float()  # load to FP32
     #model.load_state_dict(torch.load(weights, map_location=device))
     # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
     # model.fuse()
