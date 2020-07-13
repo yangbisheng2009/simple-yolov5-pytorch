@@ -6,6 +6,7 @@ import shutil
 import time
 from pathlib import Path
 from threading import Thread
+import traceback
 
 import cv2
 import numpy as np
@@ -365,8 +366,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         else:
             s = path.replace('images', 'labels')
 
-        pbar = tqdm(self.label_files)
-        for i, file in enumerate(pbar):
+        #pbar = tqdm(self.label_files)
+        #print('====> {}'.format(len(self.label_files)))
+        #for i, file in enumerate(pbar):
+        for i, file in enumerate(self.label_files):
             if labels_loaded:
                 l = self.labels[i]
                 # np.savetxt(file, l, '%g')  # save *.txt from *.npy file
@@ -376,6 +379,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         l = np.array([x.split() for x in f.read().splitlines()], dtype=np.float32)
                 except:
                     nm += 1  # print('missing labels for image %s' % self.img_files[i])  # file missing
+                    traceback.print_exc()
                     continue
 
             if l.shape[0]:
@@ -423,8 +427,6 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 ne += 1  # print('empty labels for image %s' % self.img_files[i])  # file empty
                 # os.system("rm '%s' '%s'" % (self.img_files[i], self.label_files[i]))  # remove
 
-            pbar.desc = 'Caching labels %s (%g found, %g missing, %g empty, %g duplicate, for %g images)' % (
-                s, nf, nm, ne, nd, n)
         assert nf > 0 or n == 20288, 'No labels found in %s. See %s' % (os.path.dirname(file) + os.sep, help_url)
         if not labels_loaded and n > 1000:
             print('Saving labels to %s for faster future loading' % np_labels_path)

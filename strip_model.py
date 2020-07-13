@@ -10,9 +10,9 @@ args = parser.parse_args()
 def main():
     x = torch.load(args.input_checkpoint, map_location=torch.device('cpu'))
     print(x.keys())
-    x['model'].half()
-    #torch.save(x['model'].half().state_dict(), args.output_checkpoint)
-    torch.save(x['model'].half(), args.output_checkpoint)
+    #x['model'].half()
+    torch.save(x['model'].half().state_dict(), args.output_checkpoint)
+    #torch.save(x['model'].half(), args.output_checkpoint)
 
 
 if __name__ == '__main__':

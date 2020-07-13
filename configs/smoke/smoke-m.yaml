@@ -1,14 +1,14 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'driver-m'
+project_name: 'smoke-m'
 
-train: /home/work/yangfg/corpus/driver/phase3/yolo/images/train
-val: /home/work/yangfg/corpus/driver/phase3/yolo/images/val
+train: /home/work/yangfg/rlcorpus/RF_dataset/yolo/images/train
+val: /home/work/yangfg/rlcorpus/RF_dataset/yolo/images/val
 
 # number of classes
-nc: 7
+nc: 1
 
 # class names
-names: ['face', 'part_face', 'bow_face', 'up_face', 'chair', 'glasses', 'side_face']
+names: ['smoke']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple
