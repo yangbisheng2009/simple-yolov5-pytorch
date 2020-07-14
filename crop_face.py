@@ -80,8 +80,9 @@ def detect():
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-        t2 = torch_utils.time_synchronized()
 
+        l1 = []
+        l2 = []
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             p, s, im0 = path, '', im0s
@@ -99,14 +100,14 @@ def detect():
 
                 # Write results
                 for *xyxy, conf, cls in det:
-                    label = '%s %.2f' % (names[int(cls)], conf)
                     xmin, ymin, xmax, ymax = xyxy
-                    color = colors[int(cls)]
-                    cv2.rectangle(im0, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
-                    cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+                    if names[int(cls)] == 'face':
+                        l1.append(ymax - ymin)
+                        l2.append([xmin, ymin, xmax, ymax])
 
-            cv2.imwrite(os.path.join(opt.output_images, f), im0)
-            #print('%sDone. (%.3fs)' % (s, t2 - t1))
+        if len(l1) > 0:
+            xmin, ymin, xmax, ymax = l2[l1.index(max(l1))]
+            cv2.imwrite(os.path.join(opt.output_images, f), im0s[int(ymin):int(ymax), int(xmin):int(xmax)])
         print('%sDone. (%.3fs)' % (path, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))

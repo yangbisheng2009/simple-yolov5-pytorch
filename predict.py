@@ -6,6 +6,7 @@ import torch.backends.cudnn as cudnn
 from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
+from models.yolo import Model
 
 
 def get_all_colors(class_num, seed=1):
@@ -24,16 +25,25 @@ def detect():
 
     # Initialize
     device = torch_utils.select_device(opt.device)
+    '''
     if os.path.exists(opt.output_images):
         shutil.rmtree(opt.output_images)  # delete output folder
     os.makedirs(opt.output_images)  # make new output folder
+    '''
     half = device.type != 'cpu'  # half precision only supported on CUDA
+
+
+    with open(opt.project) as f:
+        data_dict = yaml.load(f, Loader=yaml.FullLoader)
+    model = Model(data_dict).to(device)
+    model.load_state_dict(torch.load(weights, map_location=device))
+    model.names = data_dict['names']
+
 
     # Load model
     #google_utils.attempt_download(weights)
-    model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
+    #model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
     #model = torch.load(weights, map_location=device).float()  # load to FP32
-    #model.load_state_dict(torch.load(weights, map_location=device))
     # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
     # model.fuse()
     model.to(device).eval()
@@ -51,6 +61,7 @@ def detect():
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     #for path, img, im0s, vid_cap in dataset:
     for f in os.listdir(source):
+        t1 = time.time()
         path = os.path.join(source, f)
         im0s = cv2.imread(path)
         img = letterbox(im0s, new_shape=imgsz)[0]
@@ -64,7 +75,7 @@ def detect():
             img = img.unsqueeze(0)
 
         # Inference
-        t1 = torch_utils.time_synchronized()
+        #t1 = torch_utils.time_synchronized()
         pred = model(img, augment=opt.augment)[0]
 
         # Apply NMS
@@ -95,7 +106,8 @@ def detect():
                     cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
             cv2.imwrite(os.path.join(opt.output_images, f), im0)
-            print('%sDone. (%.3fs)' % (s, t2 - t1))
+            #print('%sDone. (%.3fs)' % (s, t2 - t1))
+        print('%sDone. (%.3fs)' % (path, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
@@ -103,6 +115,7 @@ def detect():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str, default='weights/yolov5s.pt', help='model.pt path')
+    parser.add_argument('--project', '-p', type=str, default='configs/mhs_s.yaml', help='project')
     parser.add_argument('--input-images', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--output-images', type=str, default='./output-images', help='output images dir')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
