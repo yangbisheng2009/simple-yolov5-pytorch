@@ -10,10 +10,14 @@ from models.yolo import Model
 
 
 def get_all_colors(class_num, seed=1):
+    color_pool = [[0, 0, 255], [0, 255, 0], [51, 253, 253], [207, 56, 248], [255, 0, 0]]
     class_colors = {}
     random.seed(seed)
     for cls in range(class_num):
-        class_colors[cls] = [random.randint(0, 255) for _ in range(3)]
+        if cls < len(color_pool):
+            class_colors[cls] = color_pool[cls]
+        else:
+            class_colors[cls] = [random.randint(0, 255) for _ in range(3)]
 
     return class_colors
 
@@ -25,11 +29,9 @@ def detect():
 
     # Initialize
     device = torch_utils.select_device(opt.device)
-    '''
     if os.path.exists(opt.output_images):
         shutil.rmtree(opt.output_images)  # delete output folder
     os.makedirs(opt.output_images)  # make new output folder
-    '''
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
 
