@@ -186,7 +186,7 @@ def test(data,
     # Print results per class
     if verbose and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            print('***SUB-CLASS*** Class: {}, Images: {}, Targets: {}, Prec: {:.4f}, Recall: {:.4f}, AP@.5: [{:.4f}], '
+            print('***{}*** Images: {}, Targets: {}, Prec: {:.4f}, Recall: {:.4f}, AP@.5: [{:.4f}], '
                   'AP@.5:.95: {:.4f}'.format(names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
 
     # Print speeds

@@ -1,5 +1,6 @@
 import argparse
 import random
+import tqdm
 
 import torch.backends.cudnn as cudnn
 
@@ -32,20 +33,11 @@ def detect():
     '''
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
-
     with open(opt.project) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)
     model = Model(data_dict).to(device)
     model.load_state_dict(torch.load(weights, map_location=device))
     model.names = data_dict['names']
-
-
-    # Load model
-    #google_utils.attempt_download(weights)
-    #model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
-    #model = torch.load(weights, map_location=device).float()  # load to FP32
-    # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
-    # model.fuse()
     model.to(device).eval()
     if half:
         model.half()  # to FP16
@@ -60,7 +52,7 @@ def detect():
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     #for path, img, im0s, vid_cap in dataset:
-    for f in os.listdir(source):
+    for f in tqdm(os.listdir(source)):
         t1 = time.time()
         path = os.path.join(source, f)
         im0s = cv2.imread(path)
@@ -101,14 +93,14 @@ def detect():
                 # Write results
                 for *xyxy, conf, cls in det:
                     xmin, ymin, xmax, ymax = xyxy
-                    if names[int(cls)] == 'face':
+                    if 'face' in names[int(cls)]:
                         l1.append(ymax - ymin)
                         l2.append([xmin, ymin, xmax, ymax])
 
         if len(l1) > 0:
             xmin, ymin, xmax, ymax = l2[l1.index(max(l1))]
             cv2.imwrite(os.path.join(opt.output_images, f), im0s[int(ymin):int(ymax), int(xmin):int(xmax)])
-        print('%sDone. (%.3fs)' % (path, time.time() - t1))
+        #print('%s Done. (%.3fs)' % (path, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))
 

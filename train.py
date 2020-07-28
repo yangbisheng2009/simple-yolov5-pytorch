@@ -244,32 +244,23 @@ def train(hyp):
         # mAP
         ema.update_attr(model)
         final_epoch = epoch + 1 == epochs
-        if not opt.notest or final_epoch:  # Calculate mAP
-            results, maps, times = test.test(opt.project,
-                                             batch_size=batch_size,
-                                             imgsz=imgsz_test,
-                                             #save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
-                                             model=ema.ema,
-                                             single_cls=opt.single_cls,
-                                             dataloader=testloader)
 
+        #if not opt.notest or final_epoch:  # Calculate mAP
+        results, maps, times = test.test(opt.project,
+                                         batch_size=batch_size,
+                                         imgsz=imgsz_test,
+                                         #save_json=final_epoch and opt.data.endswith(os.sep + 'coco.yaml'),
+                                         model=ema.ema,
+                                         single_cls=opt.single_cls,
+                                         dataloader=testloader)
+        map05 = results[2]
+        map095 = results[3]
         # Update best mAP
         fi = fitness(np.array(results).reshape(1, -1))  # fitness_i = weighted combination of [P, R, mAP, F1]
         if fi > best_fitness:
             best_fitness = fi
-
-        # Save model
-        ckpt = {'epoch': epoch,
-                'best_fitness': best_fitness,
-                #'training_results': f.read(),
-                'model': ema.ema.module if hasattr(model, 'module') else ema.ema,
-                'optimizer': None if final_epoch else optimizer.state_dict()}
-
-        # Save last, best and delete
-        torch.save(ckpt, last)
-        if (best_fitness == fi) and not final_epoch:
-            torch.save(ckpt, best)
-        del ckpt
+            torch.save(ema.ema.half().state_dict(), os.path.join(checkpoint_dir, str(epoch) + '_' +
+                       '%.4f' % map05 + '_' + '%.4f' % map095 + '_' + '%.4f' % fi + '.pth'))
 
         # end epoch ----------------------------------------------------------------------------------------------------
     # end training

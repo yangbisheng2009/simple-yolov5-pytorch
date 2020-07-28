@@ -109,7 +109,7 @@ def detect():
 
             cv2.imwrite(os.path.join(opt.output_images, f), im0)
             #print('%sDone. (%.3fs)' % (s, t2 - t1))
-        print('%sDone. (%.3fs)' % (path, time.time() - t1))
+        print('%s Done. (%.3fs)' % (path, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
