@@ -107,8 +107,7 @@ def detect():
                     cv2.rectangle(im0, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
                     cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
-            cv2.imwrite(os.path.join(opt.output_images, f), im0)
-            #print('%sDone. (%.3fs)' % (s, t2 - t1))
+        cv2.imwrite(os.path.join(opt.output_images, f), im0)
         print('%s Done. (%.3fs)' % (path, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))
