@@ -10,7 +10,7 @@ from models.yolo import Model
 
 
 def get_all_colors(class_num, seed=1):
-    color_pool = [[0, 0, 255], [0, 255, 0], [51, 253, 253], [207, 56, 248], [255, 0, 0]]
+    color_pool = [[0, 255, 0], [0, 0, 255], [51, 253, 253], [207, 56, 248], [255, 0, 0]]
     class_colors = {}
     random.seed(seed)
     for cls in range(class_num):
@@ -105,7 +105,7 @@ def detect():
                     xmin, ymin, xmax, ymax = xyxy
                     color = colors[int(cls)]
                     cv2.rectangle(im0, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
-                    cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+                    cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 2, color, 2)
 
         cv2.imwrite(os.path.join(opt.output_images, f), im0)
         print('%s Done. (%.3fs)' % (path, time.time() - t1))
