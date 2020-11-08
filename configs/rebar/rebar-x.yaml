@@ -1,18 +1,18 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'X-m'
-
-train: /home/work/yangfg/corpus/X/yolo/images/train
-val: /home/work/yangfg/corpus/X/yolo/images/val
-
+project_name: 'rebar-x'
+ 
+train: /home/yangfg/work/datasets/rebar-count/yolo/images/train
+val: /home/yangfg/work/datasets/rebar-count/yolo/images/val
+ 
 # number of classes
-nc: 10
-
+nc: 1
+ 
 # class names
-names: ['zippooil', 'firecrackers', 'nailpolish', 'knife', 'scissors', 'slingshot', 'powerbank', 'lighter', 'pressure', 'handcuffs']
+names: ['rebar']
 
-# parameters
-depth_multiple: 0.67  # model depth multiple
-width_multiple: 0.75  # layer channel multiple
+
+depth_multiple: 1.33  # model depth multiple
+width_multiple: 1.25  # layer channel multiple
 
 # anchors
 anchors:

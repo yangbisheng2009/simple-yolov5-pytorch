@@ -1,14 +1,14 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'mask-m'
+project_name: 'reflect-cloth-m'
 
-train: /home/work/yangfg/corpus/mask/yolo/images/train
-val: /home/work/yangfg/corpus/mask/yolo/images/val
+train: /home/yangfg/work/datasets/reflect-cloth/yolo/images/train
+val: /home/yangfg/work/datasets/reflect-cloth/yolo/images/val
 
 # number of classes
-nc: 2
+nc: 4
 
 # class names
-names: ['mask', 'face']
+names: ['other_clothes', 'person', 'reflective_clothes', 'hat']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple
