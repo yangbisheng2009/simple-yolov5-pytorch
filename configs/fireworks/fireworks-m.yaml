@@ -1,14 +1,14 @@
 # train and val datasets (image directory or *.txt file with image paths)
 project_name: 'fireworks-m'
 
-train: /home/yangfg/work/datasets/fireworks/yolo/images/train
-val: /home/yangfg/work/datasets/fireworks/yolo/images/val
+train: /home/yangfg/work/workspace/fireworks/yolo/images/train
+val: /home/yangfg/work/workspace/fireworks/yolo/images/val
 
 # number of classes
-nc: 1
+nc: 2
 
 # class names
-names: ['fire']
+names: ['fire', 'smoke']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple

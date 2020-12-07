@@ -1,14 +1,14 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'fire-m'
+project_name: 'kepu-m'
 
-train: /home/yangfg/work/corpus/ytfire/yolo/images/train
-val: /home/yangfg/work/corpus/ytfire/yolo/images/val
+train: /home/yangfg/work/datasets/VOC/yolo/images/train
+val: /home/yangfg/work/datasets/VOC/yolo/images/val
 
 # number of classes
-nc: 1
+nc: 22
 
 # class names
-names: ['fire']
+names: ['fire', 'smoke', 'boat', 'tvmonitor', 'chair', 'bicycle', 'bus', 'aeroplane', 'pottedplant', 'diningtable', 'sheep', 'cat', 'bird', 'person', 'dog', 'train', 'bottle', 'sofa', 'cow', 'horse', 'car', 'motorbike']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple
