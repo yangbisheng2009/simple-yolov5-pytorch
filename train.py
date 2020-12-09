@@ -29,10 +29,11 @@ from utils.google_utils import attempt_download
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_cfg', type=str, default='', help='model.yaml path')
-parser.add_argument('--data_cfg', type=str, default='data/coco128.yaml', help='data.yaml path')
-parser.add_argument('--hyp', type=str, default='data/hyp.scratch.yaml', help='hyperparameters path')
-parser.add_argument('--epochs', type=int, default=300)
+parser.add_argument('--model-cfg', type=str, default='', help='model.yaml path')
+parser.add_argument('--data-cfg', type=str, default='', help='data.yaml path')
+parser.add_argument('--hyp', type=str, default='configs/hyp/hyp.scratch.yaml', help='hyperparameters path')
+parser.add_argument('--checkpoints', type=str, default='./checkpoints', help='checkpoints')
+parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
 parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
 parser.add_argument('--rect', action='store_true', help='rectangular training')
@@ -121,7 +122,7 @@ def train(hyp, args, device):
     # Trainloader
     dataloader, dataset = create_dataloader(train_path, imgsz, args.batch_size, gs, args,
                                             hyp=hyp, augment=True, cache=args.cache_images, rect=args.rect,
-                                            rank=-1, world_size=args.world_size, workers=args.workers)
+                                            rank=-1, world_size=1, workers=args.workers)
     mlc = np.concatenate(dataset.labels, 0)[:, 0].max()  # max label class
     nb = len(dataloader)  # number of batches
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, args.data_cfg, nc - 1)
@@ -129,7 +130,7 @@ def train(hyp, args, device):
     ema.updates = start_epoch * nb // accumulate  # set EMA updates
     testloader = create_dataloader(test_path, imgsz_test, args.batch_size, gs, args,
                                    hyp=hyp, augment=False, cache=args.cache_images and not args.notest, rect=True,
-                                   rank=-1, world_size=args.world_size, workers=args.workers)[0]  # testloader
+                                   rank=-1, world_size=1, workers=args.workers)[0]  # testloader
 
     if not args.resume:
         labels = np.concatenate(dataset.labels, 0)
@@ -158,13 +159,8 @@ def train(hyp, args, device):
 
         mloss = torch.zeros(4, device=device)  # mean losses
 
-        pbar = enumerate(dataloader)
-        print(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'targets', 'img_size'))
-
-        pbar = tqdm(pbar, total=nb)  # progress bar
-
         optimizer.zero_grad()
-        for i, (imgs, targets, paths, _) in pbar:  # batch -------------------------------------------------------------
+        for i, (imgs, targets, paths, _) in enumerate(dataloader):  # batch -------------------------------------------------------------
             ni = i + nb * epoch  # number integrated batches (since train start)
             imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
 
@@ -207,7 +203,7 @@ def train(hyp, args, device):
             giou_loss, obj_loss, cls_loss, total_loss = mloss
             mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
             print('Epoch: {}/{}, Batch: {}/{}, Mem: {}, giou_loss: {:.3f}, obj_loss: {:.3f}, cls_loss: {:.3f}, total_'
-                  'loss: {:.3f}, targets:{}, img_size: {} '.format(args.epoch, args.epochs-1, i, nb-1, mem, giou_loss,
+                  'loss: {:.3f}, targets:{}, img_size: {} '.format(epoch, args.epochs-1, i, nb-1, mem, giou_loss,
                   obj_loss, cls_loss, total_loss, targets.shape[0], imgs.shape[-1]))
             # end batch ------------------------------------------------------------------------------------------------
 
@@ -225,7 +221,7 @@ def train(hyp, args, device):
                                              model=ema.ema,
                                              single_cls=args.single_cls,
                                              dataloader=testloader,
-                                             plots=epoch == 0 or final_epoch)  # plot first and last
+                                             verbose=True)
 
 
         # Update best mAP
