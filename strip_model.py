@@ -1,5 +1,6 @@
 import argparse
 import torch
+#from models.yolo import Model
 
 parser = argparse.ArgumentParser(description='strip model')
 parser.add_argument('--input-checkpoint', type=str, default='checkpoints/helmet-m/best.pt', help='input checkpoint.')
@@ -7,21 +8,10 @@ parser.add_argument('--output-checkpoint', type=str, default='checkpoints/helmet
 args = parser.parse_args()
 
 
-def main():
-    x = torch.load(args.input_checkpoint, map_location=torch.device('cpu'))
-    print(x.keys())
-    #x['model'].half()
-    torch.save(x['model'].half().state_dict(), args.output_checkpoint)
-    #torch.save(x['model'].half(), args.output_checkpoint)
-
-def main_bak():
-    x = torch.load(args.input_checkpoint, map_location=torch.device('cpu'))
-    #print(x.keys())
-    #x['model'].half()
-    torch.save(x.state_dict(), args.output_checkpoint)
-    #torch.save(x['model'].half(), args.output_checkpoint)
-
+def strip_model():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = torch.load(args.input_checkpoint, map_location=device)
+    torch.save(model['model'].state_dict(), args.output_checkpoint)
 
 if __name__ == '__main__':
-    main()
-    #main_bak()
+    strip_model()
