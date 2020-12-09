@@ -302,19 +302,6 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, fname='precision-re
     # Compute F1 score (harmonic mean of precision and recall)
     f1 = 2 * p * r / (p + r + 1e-16)
 
-    if plot:
-        py = np.stack(py, axis=1)
-        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        ax.plot(px, py, linewidth=0.5, color='grey')  # plot(recall, precision)
-        ax.plot(px, py.mean(1), linewidth=2, color='blue', label='all classes %.3f mAP@0.5' % ap[:, 0].mean())
-        ax.set_xlabel('Recall')
-        ax.set_ylabel('Precision')
-        ax.set_xlim(0, 1)
-        ax.set_ylim(0, 1)
-        plt.legend()
-        fig.tight_layout()
-        fig.savefig(fname, dpi=200)
-
     return p, r, ap, f1, unique_classes.astype('int32')
 
 
