@@ -16,8 +16,6 @@ import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
 from torch.cuda import amp
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 import test  # import test.py to get mAP after each epoch
@@ -206,19 +204,14 @@ def train(hyp, args, device):
                     ema.update(model)
 
             mloss = (mloss * i + loss_items) / (i + 1)  # update mean losses
+            giou_loss, obj_loss, cls_loss, total_loss = mloss
             mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)  # (GB)
-            s = ('%10s' * 2 + '%10.4g' * 6) % (
-                '%g/%g' % (args.epoch, args.epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
-            pbar.set_description(s)
-
-            print('Epoch: {}/{}, Batch: {}/{}, Mem: {}, giou_loss: {:.3f}, obj_loss: {:.3f}, '
-                  'cls_loss: {:.3f}, total_loss: {:.3f}, targets:{}, img_size: {} '.format(
-                  args.epoch, args.epochs-1, i, nb-1, mem, giou_loss, obj_loss, cls_loss, total_loss,
-                  targets.shape[0], imgs.shape[-1]))
+            print('Epoch: {}/{}, Batch: {}/{}, Mem: {}, giou_loss: {:.3f}, obj_loss: {:.3f}, cls_loss: {:.3f}, total_'
+                  'loss: {:.3f}, targets:{}, img_size: {} '.format(args.epoch, args.epochs-1, i, nb-1, mem, giou_loss,
+                  obj_loss, cls_loss, total_loss, targets.shape[0], imgs.shape[-1]))
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
-        lr = [x['lr'] for x in optimizer.param_groups]  # for tensorboard
         scheduler.step()
 
         # mAP
@@ -232,7 +225,6 @@ def train(hyp, args, device):
                                              model=ema.ema,
                                              single_cls=args.single_cls,
                                              dataloader=testloader,
-                                             save_dir=log_dir,
                                              plots=epoch == 0 or final_epoch)  # plot first and last
 
 
