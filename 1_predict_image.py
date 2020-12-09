@@ -17,7 +17,8 @@ from utils.datasets import letterbox
 from utils.general import (
     check_img_size, non_max_suppression, apply_classifier, scale_coords,
     xyxy2xywh, plot_one_box, strip_optimizer, set_logging)
-from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.forward_util import forward_one
+
 
 
 parser = argparse.ArgumentParser()
@@ -62,7 +63,10 @@ def detect():
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     for f in os.listdir(args.input_images):
         path = os.path.join(args.input_images, f)
-        im0s = cv2.imread(path)
+        bgr_mat = cv2.imread(path)
+        pred = forward_one(model, bgr_mat, imgsz, device, half, args)
+
+        '''
         img = letterbox(im0s, new_shape=imgsz)[0]
         img = img[:, :, ::-1].transpose(2, 0, 1)
         img = np.ascontiguousarray(img)
@@ -77,21 +81,18 @@ def detect():
 
         # Apply NMS
         pred = non_max_suppression(pred, args.conf_thres, args.iou_thres, classes=args.classes, agnostic=args.agnostic_nms)
-
+        '''
         # Process detections
         for i, det in enumerate(pred):  # detections per image
-            im0 = im0s
             if det is not None and len(det):
-                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-                # Write results
                 for *xyxy, conf, cls in det:
                     color = colors[int(cls)]
                     label = '%s %.2f' % (names[int(cls)], conf)
                     xmin, ymin, xmax, ymax = xyxy
-                    cv2.rectangle(im0, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
-                    cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+                    cv2.rectangle(bgr_mat, (xmin, ymin), (xmax, ymax), color=color, thickness=2)
+                    cv2.putText(bgr_mat, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
-        cv2.imwrite(os.path.join(args.output_images, f), im0)
+        cv2.imwrite(os.path.join(args.output_images, f), bgr_mat)
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
