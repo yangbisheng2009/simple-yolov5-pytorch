@@ -1,3 +1,5 @@
+import cv2
+import torch
 import argparse
 import random
 
@@ -7,25 +9,12 @@ from utils import google_utils
 from utils.datasets import *
 from utils.utils import *
 from models.yolo import Model
-
-
-def get_all_colors(class_num, seed=1):
-    color_pool = [[0, 0, 255], [0, 255, 0], [51, 253, 253], [207, 56, 248], [255, 0, 0]]
-    class_colors = {}
-    random.seed(seed)
-    for cls in range(class_num):
-        if cls < len(color_pool):
-            class_colors[cls] = color_pool[cls]
-        else:
-            class_colors[cls] = [random.randint(0, 255) for _ in range(3)]
-
-    return class_colors
+from utils.forward_util import forward_one
 
 
 def detect():
     source, weights, view_img, save_txt, imgsz = \
         opt.input_images, opt.checkpoint, opt.view_img, opt.save_txt, opt.img_size
-    webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -34,80 +23,37 @@ def detect():
     os.makedirs(opt.output_images)  # make new output folder
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
-
     with open(opt.project) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)
+    names = data_dict['names']
+    colors = get_all_colors(len(names))
+
     model = Model(data_dict).to(device)
     model.load_state_dict(torch.load(weights, map_location=device))
-    model.names = data_dict['names']
-
-
-    # Load model
-    #google_utils.attempt_download(weights)
-    #model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
-    #model = torch.load(weights, map_location=device).float()  # load to FP32
-    # torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
-    # model.fuse()
     model.to(device).eval()
     if half:
         model.half()  # to FP16
 
-    # Get names and colors
-    names = model.module.names if hasattr(model, 'module') else model.names
-    #colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
-    colors = get_all_colors(len(names))
-
-    # Run inference
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-    #for path, img, im0s, vid_cap in dataset:
     for f in os.listdir(source):
         t1 = time.time()
         path = os.path.join(source, f)
         im0s = cv2.imread(path)
-        img = letterbox(im0s, new_shape=imgsz)[0]
-        img = img[:, :, ::-1].transpose(2, 0, 1)
-        img = np.ascontiguousarray(img)
 
-        img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
-        img /= 255.0  # 0 - 255 to 0.0 - 1.0
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
+        pred = forward_one(model, im0s, imgsz, device, half, opt)
 
-        # Inference
-        #t1 = torch_utils.time_synchronized()
-        pred = model(img, augment=opt.augment)[0]
-
-        # Apply NMS
-        pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-        t2 = torch_utils.time_synchronized()
-
-        # Process detections
         for i, det in enumerate(pred):  # detections per image
-            p, s, im0 = path, '', im0s
-
-            s += '%gx%g ' % img.shape[2:]  # print string
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  #  normalization gain whwh
             if det is not None and len(det):
-                # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-
-                # Print results
-                for c in det[:, -1].unique():
-                    n = (det[:, -1] == c).sum()  # detections per class
-                    s += '%g %ss, ' % (n, names[int(c)])  # add to string
-
-                # Write results
                 for *xyxy, conf, cls in det:
                     label = '%s %.2f' % (names[int(cls)], conf)
                     xmin, ymin, xmax, ymax = xyxy
                     color = colors[int(cls)]
-                    cv2.rectangle(im0, (xmin, ymin), (xmax, ymax), color=color, thickness=1)
-                    cv2.putText(im0, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+                    cv2.rectangle(im0s, (xmin, ymin), (xmax, ymax), color=color, thickness=1)
+                    cv2.putText(im0s, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
-        cv2.imwrite(os.path.join(opt.output_images, f), im0)
+        cv2.imwrite(os.path.join(opt.output_images, f), im0s)
         print('%s Done. (%.3fs)' % (path, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))
