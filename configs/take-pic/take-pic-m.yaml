@@ -1,8 +1,8 @@
 # train and val datasets (image directory or *.txt file with image paths)
 project_name: 'take-pic-m'
 
-train: /home/yangfg/work/datasets/take-pic/yolo/images/train
-val: /home/yangfg/work/datasets/take-pic/yolo/images/val
+train: /home/work/datasets/take-pic/yolo/images/train
+val: /home/work/datasets/take-pic/yolo/images/val
 
 # number of classes
 nc: 2
