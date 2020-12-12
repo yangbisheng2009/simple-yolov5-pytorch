@@ -1,8 +1,8 @@
 # train and val datasets (image directory or *.txt file with image paths)
 project_name: 'helmet-reflect-m'
 
-train: /home/work/csy/datasets/safety/yolo/images/train
-val: /home/work/csy/datasets/safety/yolo/images/val
+train: /home/work/datasets/helmet-reflect/yolo/images/train
+val: /home/work/datasets/helmet-reflect/yolo/images/val
 
 # number of classes
 nc: 3
