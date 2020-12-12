@@ -1,14 +1,14 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'piano-m'
+project_name: 'helmet-reflect-m'
 
-train: /home/work/yangfg/corpus/piano/yolo/images/train
-val: /home/work/yangfg/corpus/piano/yolo/images/val
+train: /home/work/csy/datasets/safety/yolo/images/train
+val: /home/work/csy/datasets/safety/yolo/images/val
 
 # number of classes
-nc: 1
+nc: 3
 
 # class names
-names: ['1670']
+names: ['hat', 'person', 'reflective_clothes']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple

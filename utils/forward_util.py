@@ -29,7 +29,7 @@ def forward_one(model, bgr_mat, checked_imgsz, device, half, opt):
     # Process detections
     for i, det in enumerate(pred):  # detections per image
         if det is not None and len(det):
-            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], bgr_mat.shape).round()
 
     return pred
 
