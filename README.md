@@ -8,3 +8,5 @@ CUDA_VISIBLE_DEVICES=0 python train.py -p config/driver/driver-m.yaml --batch-si
 # predict
 CUDA_VISIBLE_DEVICES=1 python predict --input-images /home/work/xx --output-images /home/work/yy --checkpoint ./checkpoints/driver/xx.pt --conf 0.4
 ```
+## Pretrained models
+[Safety helmet and reflect cloth](https://pan.baidu.com/s/1mI6xSROHdBE0v60OWRp5pw)
