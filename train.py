@@ -274,7 +274,7 @@ def train(hyp):
 if __name__ == '__main__':
     check_git_status()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=300)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--project', '-p', type=str, default='configs/mhs_s.yaml', help='project')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='train,test sizes')

@@ -13,8 +13,7 @@ from utils.forward_util import forward_one
 
 
 def detect():
-    source, weights, view_img, save_txt, imgsz = \
-        opt.input_images, opt.checkpoint, opt.view_img, opt.save_txt, opt.img_size
+    weights, imgsz = opt.checkpoint, opt.img_size
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -37,9 +36,9 @@ def detect():
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-    for f in os.listdir(source):
+    for f in os.listdir(opt.input_images):
         t1 = time.time()
-        path = os.path.join(source, f)
+        path = os.path.join(opt.input_images, f)
         im0s = cv2.imread(path)
 
         pred = forward_one(model, im0s, imgsz, device, half, opt)
@@ -70,8 +69,6 @@ if __name__ == '__main__':
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
