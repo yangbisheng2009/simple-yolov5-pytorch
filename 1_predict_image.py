@@ -54,7 +54,7 @@ def detect():
                     cv2.putText(im0s, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
         cv2.imwrite(os.path.join(opt.output_images, f), im0s)
-        print('%s Done. (%.3fs)' % (path, time.time() - t1))
+        print('%s Done. (%.3fs)' % (f, time.time() - t1))
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
