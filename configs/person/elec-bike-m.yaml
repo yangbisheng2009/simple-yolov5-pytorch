@@ -1,5 +1,5 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'elec-bike-m'
+project_name: 'person-m'
 
 train: /home/work/datasets/elec-bike/yolo/images/train
 val: /home/work/datasets/elec-bike/yolo/images/val
@@ -19,7 +19,7 @@ names: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 't
         'hair drier', 'toothbrush']
 
 # dest object
-dest_object: ['motorcycle']
+dest_object: ['person']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple

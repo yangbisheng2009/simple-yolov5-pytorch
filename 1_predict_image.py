@@ -2,6 +2,7 @@ import cv2
 import torch
 import argparse
 import random
+from collections import defaultdict
 
 import torch.backends.cudnn as cudnn
 
@@ -25,7 +26,18 @@ def detect():
     with open(opt.project) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)
     names = data_dict['names']
-    colors = get_all_colors(len(names))
+    dest_object = data_dict['dest_object'] if 'dest_object' in data_dict else names
+    if 'name_map' in data_dict:
+        name_map = data_dict['name_map']
+    else:
+        name_map = defaultdict()
+        for x in dest_object:
+            name_map[x] = x
+    draw_names = set()
+    for k, v in name_map.items():
+        draw_names.add(v)
+    draw_names = list(draw_names)
+    colors = get_all_colors(len(draw_names))
 
     model = Model(data_dict).to(device)
     model.load_state_dict(torch.load(weights, map_location=device))
@@ -46,11 +58,13 @@ def detect():
         for i, det in enumerate(pred):  # detections per image
             if det is not None and len(det):
                 for *xyxy, conf, cls in det:
-                    label = '%s %.2f' % (names[int(cls)], conf)
-                    xmin, ymin, xmax, ymax = xyxy
-                    color = colors[int(cls)]
-                    cv2.rectangle(im0s, (xmin, ymin), (xmax, ymax), color=color, thickness=1)
-                    cv2.putText(im0s, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+                    if names[int(cls)] in dest_object:
+                        draw_str = name_map[names[int(cls)]]
+                        color = colors[draw_names.index(draw_str)]
+                        label = '%s %.2f' % (draw_str, conf)
+                        xmin, ymin, xmax, ymax = xyxy
+                        cv2.rectangle(im0s, (xmin, ymin), (xmax, ymax), color=color, thickness=1)
+                        cv2.putText(im0s, label, (xmin, ymax), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
 
         cv2.imwrite(os.path.join(opt.output_images, f), im0s)
         print('%s Done. (%.3fs)' % (f, time.time() - t1))
