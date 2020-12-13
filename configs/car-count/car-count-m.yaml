@@ -1,8 +1,8 @@
 # train and val datasets (image directory or *.txt file with image paths)
-project_name: 'cars-m'
+project_name: 'car-count-m'
 
-train: /home/work/yangfg/corpus/traffic-cars-count/yolo/images/train
-val: /home/work/yangfg/corpus/traffic-cars-count/yolo/images/val
+train: /home/work/datasets/car-count/yolo/images/train
+val: /home/work/datasets/car-count/yolo/images/val
 
 # number of classes
 nc: 1
