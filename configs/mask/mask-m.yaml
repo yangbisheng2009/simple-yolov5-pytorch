@@ -8,7 +8,7 @@ val: /home/work/datasets/mask/yolo/images/val
 nc: 2
 
 # class names
-names: ['face', 'face_mask']
+names: ['mask', 'face']
 
 # parameters
 depth_multiple: 0.67  # model depth multiple

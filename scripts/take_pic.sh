@@ -5,5 +5,5 @@ then
     CUDA_VISIBLE_DEVICES=0 nohup python train.py --project configs/take-pic/take-pic-m.yaml 1>log.log 2>err.log &
 elif [ "$1" = "predict" ];
 then
-    python 1_predict_image.py --project configs/helmet-reflect/helmet-reflect.yaml --input-images /home/work/datasets/helmet-reflect/yolo/images/val/ --output-images outputs --agnostic-nms --checkpoint checkpoints/helmet-reflect-m/85_0.8936_0.6007_0.6300.pth
+    python 1_predict_image.py --project configs/take-pic/take-pic-m.yaml --input-images /home/work/datasets/take-pic/yolo/images/val/ --output-images outputs --agnostic-nms --checkpoint checkpoints/take-pic-m/99_0.9466_0.6418_0.6723.pth
 fi
