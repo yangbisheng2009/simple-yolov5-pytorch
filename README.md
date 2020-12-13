@@ -13,6 +13,8 @@ CUDA_VISIBLE_DEVICES=1 python predict --input-images /home/work/xx --output-imag
 [反光衣](https://pan.baidu.com/s/1mI6xSROHdBE0v60OWRp5pw)  
 [人员聚集](https://pan.baidu.com/s/1_o5rRiwdwMDMbDxIL5rmwg)  
 [电动车上电梯](https://pan.baidu.com/s/1_o5rRiwdwMDMbDxIL5rmwg)  
+[离岗检测](https://pan.baidu.com/s/1_o5rRiwdwMDMbDxIL5rmwg)  
+[寻根识别](https://pan.baidu.com/s/1_o5rRiwdwMDMbDxIL5rmwg)  
 [人群计数](https://pan.baidu.com/s/1mI6xSROHdBE0v60OWRp5pw)  
 [交通卡口车辆计数](https://pan.baidu.com/s/14hqyf2UYKe89584x3c9VvA)  
 [拍照行为](https://pan.baidu.com/s/1GmZtbkCHYajJSqisRy5GSQ)  
