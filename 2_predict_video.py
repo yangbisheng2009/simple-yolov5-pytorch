@@ -10,8 +10,8 @@ from utils.forward_util import forward_one
 
 
 def detect():
-    source, weights, view_img, save_txt, imgsz, output = \
-        opt.input_video, opt.checkpoint, opt.view_img, opt.save_txt, opt.img_size, opt.output_video
+    source, weights, imgsz, output = \
+        opt.input_video, opt.checkpoint, opt.img_size, opt.output_video
 
     # Initialize
     device = torch_utils.select_device(opt.device)
@@ -34,6 +34,8 @@ def detect():
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
 
     cap = cv2.VideoCapture(source)
+    #cap = cv2.VideoCapture('rtsp://admin:Admin123@192.168.1.64:554/h264/chCH/sub/av_stream')
+
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -65,8 +67,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str, default='weights/yolov5s.pt', help='model.pt path')
     parser.add_argument('--project', '-p', type=str, default='configs/mhs_s.yaml', help='project')
-    parser.add_argument('--input-video', type=str, default='inference/images',
-                        help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--input-video', type=str, default='192.168.1.64', help='source')
+    parser.add_argument('--video-type', type=str, default='camera', help='camera or video')
+    parser.add_argument('--need-view', action='store_true', help='need view')
     parser.add_argument('--output-video', type=str, default='./output-images', help='output images dir')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
