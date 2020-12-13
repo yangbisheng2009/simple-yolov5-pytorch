@@ -32,6 +32,7 @@ def detect():
         draw_names.add(v)
     draw_names = list(draw_names)
     colors = get_all_colors(len(draw_names))
+    print(colors)
 
     model = Model(data_dict).to(device)
     model.load_state_dict(torch.load(weights, map_location=device))
@@ -58,8 +59,16 @@ def detect():
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+
+    frame_cnt = 0
     while (cap.isOpened()):
         ret, im0s = cap.read()
+        frame_cnt += 1
+        if frame_cnt != int(fps / opt.fps):
+            continue
+        else:
+            frame_cnt = 0
+
         if ret:
             pred = forward_one(model, im0s, imgsz, device, half, opt)
 
@@ -93,6 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('--input-video', type=str, default='192.168.1.64', help='source')
     parser.add_argument('--video-type', type=str, default='camera', help='camera or video')
     parser.add_argument('--need-view', action='store_true', help='need view')
+    parser.add_argument('--fps', type=int, default=1, help='calc 1 frame per second')
     parser.add_argument('--output-video', type=str, default='./output-images', help='output images dir')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
